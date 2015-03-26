@@ -153,11 +153,12 @@ begin
 	nextSRAM_WE = writeToSRAM;
 end
 
-
+/*
 always@(*)
 begin
 	nextClockCounter = (clockCounter == 3'd4)? 3'd0:(clockCounter+3'd1);
 end
+*/
 
 always@(*)
 begin
