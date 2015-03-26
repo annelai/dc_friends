@@ -1,6 +1,7 @@
 module sync_controller (
 	clk_25,
 	rst_n,
+    val,
 	sync_x,
 	sync_y,
 	dvi_r,
@@ -35,7 +36,8 @@ module sync_controller (
 // ==== in/out declaration =================================
 	input 			clk_25;
 	input 			rst_n;
-
+    
+    output          val;
 	output	[9:0]	sync_x;
 	output	[9:0]	sync_y;
 	output	[4:0]	dvi_r;
@@ -96,9 +98,9 @@ module sync_controller (
 	reg		[9:0]	next_query_y;
 	reg		[9:0]	next_sync_x;
 	reg		[9:0]	next_sync_y;
-
-	reg				debug;
-	reg 			next_debug;
+    
+    reg             val, next_val;
+	reg				debug, next_debug;
 // ==== combinational part =================================
 	assign rdclk = clk_25;
 	assign x = next_query_x;
@@ -121,6 +123,7 @@ module sync_controller (
 		next_start = 1'b0;
 
 		next_debug = 1'b0;
+        next_val = 1'b0;
 
 		case(state)
 			S_IDLE: begin
@@ -132,14 +135,17 @@ module sync_controller (
 			S_WAIT: begin
 				if(ready==1'b1) begin
 					next_state = S_IDLE;
+                    next_val = 1'b1;
 					if (return_x==x && return_y==y) begin
 						next_sync_x = return_x;
 						next_sync_y = return_y;
-						next_dvi_r = r;
-						next_dvi_g = g;
-						next_dvi_b = b;
+						next_ccd_r = r;
+						next_ccd_g = g;
+						next_ccd_b = b;
 					end
-					else next_debug = 1'b1;
+					else begin
+                        next_debug = 1'b1;
+                    end
 				end
 				else begin
 					if(rdreq==1) begin
@@ -172,6 +178,7 @@ module sync_controller (
 			sync_x 		<= 10'd0;
 			sync_y 		<= 10'd0;
             debug       <= 1'b0;
+            val         <= 1'b0;
 		end
 		else begin
 			state 		<= next_state;
@@ -187,7 +194,8 @@ module sync_controller (
 			query_y 	<= next_query_y;
 			sync_x 		<= next_sync_x;
 			sync_y 		<= next_sync_y;
-            dubug       <= next_debug;
+            debug       <= next_debug;
+            val         <= next_val;
 		end
 	end
 endmodule
