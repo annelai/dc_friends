@@ -105,8 +105,8 @@ module sync_controller (
 	assign rdclk = clk_25;
 	assign x = next_query_x;
 	assign y = next_query_y;
-
-	always@(*) begin
+    
+    always@(*) begin
 		next_state = state;
 		next_query_x = query_x;
 		next_query_y = query_y;
@@ -119,43 +119,44 @@ module sync_controller (
 
 		next_sync_x = sync_x;
 		next_sync_y = sync_y;
-		next_rdreq = 1'b0;
+		next_rdreq = 1'b1;
 		next_start = 1'b0;
 
-		next_debug = 1'b0;
         next_val = 1'b0;
+		next_debug = 1'b0 || debug;
 
 		case(state)
 			S_IDLE: begin
 				if(rdempty==1'b0) begin
 					next_state = S_WAIT;
-					next_rdreq = 1'b1;
 				end
+                else begin
+                    next_rdreq = 1'b0;
+                end
 			end
 			S_WAIT: begin
 				if(ready==1'b1) begin
-					next_state = S_IDLE;
                     next_val = 1'b1;
-					if (return_x==x && return_y==y) begin
-						next_sync_x = return_x;
-						next_sync_y = return_y;
-						next_ccd_r = r;
-						next_ccd_g = g;
-						next_ccd_b = b;
-					end
-					else begin
-                        next_debug = 1'b1;
+					next_sync_x = return_x;
+					next_sync_y = return_y;
+					next_ccd_r = r;
+					next_ccd_g = g;
+					next_ccd_b = b;
+                    if(rdempty==1'b1) begin
+                        next_state = S_IDLE;
+                        next_rdreq = 1'b0;
                     end
-				end
-				else begin
-					if(rdreq==1) begin
+                    else begin
+                        if(query_x!=return_x || query_y!=return_y) begin
+                            next_debug = 1'b1;
+                        end
 						next_query_x = q[43:34];
 						next_query_y = q[33:24];
 						next_dvi_r = q[23:19];
 						next_dvi_g = q[15:10];
 						next_dvi_b = q[7:3];
 						next_start = 1'b1;
-					end
+                    end
 				end
 			end
 		endcase
