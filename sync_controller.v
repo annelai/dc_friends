@@ -133,6 +133,14 @@ module sync_controller (
 				end
 			end
 			S_WAIT: begin
+                if(rdreq==1'b1) begin
+					next_query_x = q[43:34];
+					next_query_y = q[33:24];
+					next_dvi_r = q[23:19];
+					next_dvi_g = q[15:10];
+					next_dvi_b = q[7:3];
+					next_start = 1'b1;
+                end
 				if(ready==1'b1) begin
                     next_val = 1'b1;
 					next_sync_x = return_x;
@@ -141,19 +149,12 @@ module sync_controller (
 					next_ccd_g = g;
 					next_ccd_b = b;
                     next_rdreq = 1'b1;
+                    if(query_x!=return_x || query_y!=return_y) begin
+                        next_debug = 1'b1;
+                    end
                     if(rdempty==1'b1) begin
                         next_state = S_IDLE;
-                    end
-                    else begin
-                        if(query_x!=return_x || query_y!=return_y) begin
-                            next_debug = 1'b1;
-                        end
-						next_query_x = q[43:34];
-						next_query_y = q[33:24];
-						next_dvi_r = q[23:19];
-						next_dvi_g = q[15:10];
-						next_dvi_b = q[7:3];
-						next_start = 1'b1;
+                        next_rdreq = 1'b0;
                     end
 				end
 			end
