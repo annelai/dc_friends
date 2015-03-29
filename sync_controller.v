@@ -137,8 +137,10 @@ module sync_controller (
 				if(rdempty==1'b0) begin
 					next_state = S_WAIT;
                     next_rdreq = 1'b1;
-                    next_start = 1'b0;
 				end
+                else
+                    next_start = 1'b0;
+                end
 			end
 			S_WAIT: begin
                 if(rdreq==1'b1) begin
@@ -166,6 +168,8 @@ module sync_controller (
                     if(rdempty==1'b0) begin
                         next_state = S_IDLE;
                         next_rdreq = 1'b0;
+                    end
+                    else begin
                         next_start = 1'b0;
                     end
 				end
