@@ -66,7 +66,8 @@ always@(*) begin
 			end
 		end
 		S_HOM: begin
-			next_state = S_REQ;
+			if( iSTART ) next_state = S_HOM;
+			else next_state = S_IDLE;
 		end
 		S_REQ: begin
 			if( iREADY ) begin
@@ -97,6 +98,15 @@ always@(*) begin
 		S_IDLE: begin
 			next_oREQ = 1'd0;
 			next_oREADY = 1'd0;
+
+			if( iSTART ) begin
+				next_oREQ = 1'd1;
+				denum = H20 * iX + H21 * iY + H22;
+				next_oCON_X = iX;
+				next_oCON_Y = iY;
+				next_oSRAM_X = ( H00 * iX + H01 * iY + H02 ) / denum;
+				next_oSRAM_Y = ( H10 * iX + H11 * iY + H12 ) / denum;
+			end
 		end
 		S_HOM: begin
 			next_oREQ = 1'd1;
@@ -105,6 +115,16 @@ always@(*) begin
 			next_oCON_Y = iY;
 			next_oSRAM_X = ( H00 * iX + H01 * iY + H02 ) / denum;
 			next_oSRAM_Y = ( H10 * iX + H11 * iY + H12 ) / denum;
+
+			if( iREADY ) begin
+				next_oREADY = 1'd1;
+				next_oR = iR;
+				next_oG = iG;
+				next_oB = iB;
+			end
+			else begin
+				next_oREADY = 1'd0;
+			end
 		end
 		S_REQ: begin
 			next_oREQ = 1'd0;
