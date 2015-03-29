@@ -121,7 +121,7 @@ module sync_controller (
 		next_sync_x = sync_x;
 		next_sync_y = sync_y;
 		next_rdreq = 1'b0;
-		next_start = 1'b0;
+		next_start = 1'b1;
 
         next_val = 1'b0;
 		next_debug = 1'b0 || debug;
@@ -137,6 +137,7 @@ module sync_controller (
 				if(rdempty==1'b0) begin
 					next_state = S_WAIT;
                     next_rdreq = 1'b1;
+                    next_start = 1'b0;
 				end
 			end
 			S_WAIT: begin
@@ -147,7 +148,6 @@ module sync_controller (
 					next_dvi_g = q[15:10];
 					next_dvi_b = q[7:3];
                     next_buffer1 = {q[43:24], q[23:19], q[15:10], q[7:3]};
-					next_start = 1'b1;
                 end
 				if(ready==1'b1) begin
                     next_val = 1'b1;
@@ -166,6 +166,7 @@ module sync_controller (
                     if(rdempty==1'b0) begin
                         next_state = S_IDLE;
                         next_rdreq = 1'b0;
+                        next_start = 1'b0;
                     end
 				end
 			end
