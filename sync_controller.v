@@ -159,7 +159,7 @@ module sync_controller (
                     next_dvi_r = buffer5[15:11];
                     next_dvi_g = buffer5[10:5];
                     next_dvi_b = buffer5[4:0];
-                    if(buffer[35:26]!=return_x || buffer[25:16]!=return_y) begin
+                    if(buffer5[35:26]!=return_x || buffer5[25:16]!=return_y) begin
                         next_debug = 1'b1;
                     end
                     next_rdreq = 1'b1;
