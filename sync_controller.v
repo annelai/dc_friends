@@ -119,7 +119,7 @@ module sync_controller (
 
 		next_sync_x = sync_x;
 		next_sync_y = sync_y;
-		next_rdreq = 1'b1;
+		next_rdreq = 1'b0;
 		next_start = 1'b0;
 
         next_val = 1'b0;
@@ -129,10 +129,8 @@ module sync_controller (
 			S_IDLE: begin
 				if(rdempty==1'b0) begin
 					next_state = S_WAIT;
+                    next_rdreq = 1'b1;
 				end
-                else begin
-                    next_rdreq = 1'b0;
-                end
 			end
 			S_WAIT: begin
 				if(ready==1'b1) begin
@@ -142,9 +140,9 @@ module sync_controller (
 					next_ccd_r = r;
 					next_ccd_g = g;
 					next_ccd_b = b;
+                    next_rdreq = 1'b1;
                     if(rdempty==1'b1) begin
                         next_state = S_IDLE;
-                        next_rdreq = 1'b0;
                     end
                     else begin
                         if(query_x!=return_x || query_y!=return_y) begin
