@@ -67,8 +67,6 @@ module sync_controller (
 	output 			debug;
 // ==== reg/wire declaration ===============================
 	wire 			rdclk;
-	wire	[9:0]	x;
-	wire	[9:0]	y;
 	reg		[1:0]	state, next_state;
 
 	reg		[4:0]	dvi_r;
@@ -101,11 +99,10 @@ module sync_controller (
 
     reg     [35:0]  buffer1, buffer2, buffer3, buffer4, buffer5; // 10,10,5,6,5
     reg     [35:0]  next_buffer1, next_buffer2, next_buffer3, next_buffer4, next_buffer5;
-    
+    reg     [2:0]   count, next_count;
+    reg             max_count, next_max_count;
 // ==== combinational part =================================
 	assign rdclk = clk_25;
-	assign x = next_query_x;
-	assign y = next_query_y;
     
     always@(*) begin
 		next_state = state;
@@ -124,58 +121,107 @@ module sync_controller (
 		next_start = 1'b1;
 
         next_val = 1'b0;
-		next_debug = 1'b0 || debug;
 
-        next_buffer1 = 36'd0;
-        next_buffer2 = buffer1;
-        next_buffer3 = buffer2;
-        next_buffer4 = buffer3;
-        next_buffer5 = buffer4;
-		
+        next_buffer1 = buffer1; // buffer 1 >> 2 >> 3 >> 4 >> 5
+        next_buffer2 = buffer2;
+        next_buffer3 = buffer3;
+        next_buffer4 = buffer4;
+        next_buffer5 = buffer5;
+        next_count = count;
+        next_max_count = max_count;
+
+        next_debug = 1'b0 || debug;
+
         case(state)
 			S_IDLE: begin
-				if(rdempty==1'b0) begin
+                next_start = 1'b0;
+				if(~rdempty) begin
 					next_state = S_WAIT;
                     next_rdreq = 1'b1;
-				end
-                else
-                    next_start = 1'b0;
                 end
 			end
 			S_WAIT: begin
                 if(rdreq==1'b1) begin
 					next_query_x = q[43:34];
 					next_query_y = q[33:24];
-					next_dvi_r = q[23:19];
-					next_dvi_g = q[15:10];
-					next_dvi_b = q[7:3];
+
                     next_buffer1 = {q[43:24], q[23:19], q[15:10], q[7:3]};
+                    
+                    if(max_count!=1'b1) begin
+                        next_count = count + 3'd1;
+                        next_buffer2 = buffer1;
+                    	next_buffer3 = buffer2;
+                    	next_buffer4 = buffer3;
+                    	next_buffer5 = buffer4;
+                    end
                 end
+
 				if(ready==1'b1) begin
+                    next_max_count = 1'b1;
                     next_val = 1'b1;
-                    next_sync_x = buffer5[35:26];
-                    next_sync_y = buffer5[25:16];
                     next_ccd_r = r;
                     next_ccd_g = g;
                     next_ccd_b = b;
-                    next_dvi_r = buffer5[15:11];
-                    next_dvi_g = buffer5[10:5];
-                    next_dvi_b = buffer5[4:0];
-                    if(buffer5[35:26]!=return_x || buffer5[25:16]!=return_y) begin
-                        next_debug = 1'b1;
-                    end
-                    next_rdreq = 1'b1;
-                    if(rdempty==1'b0) begin
-                        next_state = S_IDLE;
-                        next_rdreq = 1'b0;
-                    end
-                    else begin
-                        next_start = 1'b0;
-                    end
+                    
+                    next_buffer2 = buffer1;
+                    next_buffer3 = buffer2;
+                    next_buffer4 = buffer3;
+                    next_buffer5 = buffer4;
+                    case(count)
+                		3'd1: begin
+                		    next_sync_x = buffer1[35:26];
+                		    next_sync_y = buffer1[25:16];
+                		    next_dvi_r = buffer1[15:11];
+                		    next_dvi_g = buffer1[10:5];
+                		    next_dvi_b = buffer1[4:0];
+                		end
+                		3'd2: begin
+                		    next_sync_x = buffer2[35:26];
+                		    next_sync_y = buffer2[25:16];
+                		    next_dvi_r = buffer2[15:11];
+                		    next_dvi_g = buffer2[10:5];
+                		    next_dvi_b = buffer2[4:0];
+                		end
+                		3'd3: begin
+                		    next_sync_x = buffer3[35:26];
+                		    next_sync_y = buffer3[25:16];
+                		    next_dvi_r = buffer3[15:11];
+                		    next_dvi_g = buffer3[10:5];
+                		    next_dvi_b = buffer3[4:0];
+                		end
+                		3'd4: begin
+                		    next_sync_x = buffer4[35:26];
+                		    next_sync_y = buffer4[25:16];
+                		    next_dvi_r = buffer4[15:11];
+                		    next_dvi_g = buffer4[10:5];
+                		    next_dvi_b = buffer4[4:0];
+                		end
+                		3'd5: begin
+                		    next_sync_x = buffer5[35:26];
+                		    next_sync_y = buffer5[25:16];
+                		    next_dvi_r = buffer5[15:11];
+                		    next_dvi_g = buffer5[10:5];
+                		    next_dvi_b = buffer5[4:0];
+                		end
+					endcase
+					if(next_sync_x!=return_x || next_sync_y!=return_y) begin
+                		next_debug = 1'b1;
+            		end
 				end
+                else begin
+                    next_state = S_IDLE;
+                end
+                
+                if(rdempty) begin
+                    next_start = 1'b0;
+                end
+                else begin
+                    next_rdreq = 1'b1;
+                end
 			end
 		endcase
 	end
+
     
 // ==== sequential part ====================================
 	always@(posedge clk_25 or negedge rst_n) begin
@@ -200,6 +246,8 @@ module sync_controller (
             buffer3     <= 36'd0;
             buffer4     <= 36'd0;
             buffer5     <= 36'd0;
+            count       <= 3'd0;
+            max_count   <= 1'd0;
 		end
 		else begin
 			state 		<= next_state;
@@ -222,6 +270,8 @@ module sync_controller (
             buffer3     <= next_buffer3;
             buffer4     <= next_buffer4;
             buffer5     <= next_buffer5;
+            count       <= next_count;
+            max_count   <= next_max_count;
 		end
 	end
 endmodule
