@@ -99,7 +99,7 @@ module sync_controller (
 
     reg     [35:0]  buffer1, buffer2, buffer3, buffer4, buffer5; // 10,10,5,6,5
     reg     [35:0]  next_buffer1, next_buffer2, next_buffer3, next_buffer4, next_buffer5;
-    reg     [2:0]   count, next_count;
+    wire     [2:0]  count, next_count;
     reg             max_count, next_max_count;
 // ==== combinational part =================================
 	assign rdclk = clk_25;
@@ -148,7 +148,7 @@ module sync_controller (
                     next_buffer1 = {q[43:24], q[23:19], q[15:10], q[7:3]};
                     
                     if(max_count!=1'b1) begin
-                        next_count = count + 3'd1;
+                        count = count + 3'd1;
                         next_buffer2 = buffer1;
                     	next_buffer3 = buffer2;
                     	next_buffer4 = buffer3;
@@ -220,8 +220,6 @@ module sync_controller (
                 else begin
                     next_rdreq = 1'b1;
                 end
-
-                if
 			end
 		endcase
 	end
