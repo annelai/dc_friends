@@ -208,12 +208,10 @@ module sync_controller (
                 		next_debug = 1'b1;
             		end
 				end
-                else begin
-                    next_state = S_IDLE;
-                end
                 
                 if(rdempty) begin
                     next_start = 1'b0;
+                    next_state = S_IDLE;
                 end
                 else begin
                     next_rdreq = 1'b1;
