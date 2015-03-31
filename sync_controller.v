@@ -155,6 +155,9 @@ module sync_controller (
                     	next_buffer5 = buffer4;
                     end
                 end
+                else begin
+                    next_start = 1'b0;
+                end
 
 				if(ready==1'b1) begin
                     next_max_count = 1'b1;
@@ -210,12 +213,15 @@ module sync_controller (
 				end
                 
                 if(rdempty) begin
-                    next_start = 1'b0;
-                    next_state = S_IDLE;
+                    if(ready==1'b0) begin
+                        next_state = S_IDLE;
+                    end
                 end
                 else begin
                     next_rdreq = 1'b1;
                 end
+
+                if
 			end
 		endcase
 	end
