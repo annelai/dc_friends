@@ -112,7 +112,7 @@ module sync_controller (
 			sync_y 		<= 10'd0;
             debug       <= 1'b0;
             val         <= 1'b0;
-            buffer0     <= 36'd0;
+            buffer      <= 36'd0;
 		end
 		else begin
 			dvi_r		<= next_dvi_r;
