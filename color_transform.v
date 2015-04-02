@@ -1,5 +1,5 @@
 module COLOR_TRANSFORM (
-	// input port	////
+	// input port ////
 	clk_25,
 	reset,
 	valid,
@@ -9,10 +9,13 @@ module COLOR_TRANSFORM (
 	red_i,
 	green_i,
 	blue_i,
+	r_shift_i,
+	g_shift_i,
+	b_shift_i,
 
-	// output port	////
+	// output port to FIFO ////
 	wrreq,
-	wrclk_25,
+  //wrclk_25,
 	//// output-data ////
 	x_o,
 	y_o,
@@ -75,7 +78,7 @@ module COLOR_TRANSFORM (
 	parameter VM_3_8	= 32'd0;
 	parameter VM_3_9	= 32'd0;
 	parameter VM_3_10	= 32'd0;
-	parameter VM_3_11 	= 32'd0;
+	parameter VM_3_11	= 32'd0;
 	parameter VM_3_12	= 32'd0;
 	parameter VM_3_13	= 32'd0;
 	parameter VM_3_14	= 32'd0;
@@ -90,104 +93,85 @@ module COLOR_TRANSFORM (
 	input reset;
 	input valid;
 
-	input [9:0] x_i;
-	input [9:0] y_i;
-	input [7:0] red_i;
-	input [7:0] green_i;
-	input [7:0] blue_i;
+	input [9:0] x_i, y_i;
+	input [7:0] red_i, green_i, blue_i;
+	input [7:0] r_shift_i, g_shift_i, b_shift_i;
 
 	//---- output ----//
 	output wrreq;
-	output wrclk_25;
+	//output wrclk_25;
 	
-	output [9:0] x_o;
-	output [9:0] y_o;
-	output [7:0] red_o;
-	output [7:0] green_o;
-	output [7:0] blue_o;
+	output [9:0] x_o, y_o;
+	output [7:0] red_o, green_o, blue_o;
 
 //==== reg/wire declaration =================================
 	//---- output ----//
-	reg [9:0] x_o;
-	reg [9:0] y_o;
-	reg [7:0] red_o;
-	reg [7:0] green_o;
-	reg [7:0] blue_o;
-	reg [9:0] next_x_o;
-	reg [9:0] next_y_o;
-	reg [7:0] next_red_o;
- 	reg [7:0] next_green_o;
-	reg [7:0] next_blue_o;
-	reg wrreq;
-	reg next_wrreq;
-	wire wrclk_25;
+	reg [9:0] x_o, y_o;
+	reg [7:0] red_o, green_o, blue_o;
+	reg [9:0] next_x_o, next_y_o;
+	reg [7:0] next_red_o, next_green_o, next_blue_o;
+	reg wrreq, next_wrreq;
+	//wire wrclk_25;
 
 	//---- flip-flops ----//
 
 	//----Pipeline----//
-	reg valid1;
-	reg next_valid1;
-	reg valid2;
-	reg next_valid2;
+	reg valid1, next_valid1;
+	reg valid2, next_valid2;
 
-	reg [9:0] xbuff1;
-	reg [9:0] ybuff1;
-	reg [9:0] next_xbuff1;
-	reg [9:0] next_ybuff1;
-	reg [9:0] xbuff2;
-	reg [9:0] ybuff2;
-	reg [9:0] next_xbuff2;
-	reg [9:0] next_ybuff2;	
+	reg [9:0] xbuff1, ybuff1,
+			  next_xbuff1, next_ybuff1;
+	reg [9:0] xbuff2, ybuff2,
+			  next_xbuff2, next_ybuff2;	
 	
+	reg	[31:0] p18,  // R3
+			   p17,  // G3
+		       p16,  // B3
+		       p15,  // R2G
+		       p14,  // RG2
+		       p13,  // G2B
+		       p12,  // GB2
+		       p11,  // B2R
+		       p10,  // BR2
+		       p9, // R2
+		       p8, // G2
+		       p7, // B2
+		       p6, // RG
+		       p5, // GB
+		       p4, // BR
+		       p3, // R
+		       p2, // G
+		       p1; // B
 
-	reg	[31:0] p18; // R3
-	reg [31:0] p17;	// G3
-	reg	[31:0] p16; // B3
-	reg	[31:0] p15; // R2G
-	reg	[31:0] p14; // RG2
-	reg	[31:0] p13; // G2B
-	reg	[31:0] p12; // GB2
-	reg	[31:0] p11; // B2R
-	reg	[31:0] p10; // BR2
-	reg	[31:0] p9; // R2
-	reg	[31:0] p8; // G2
-	reg	[31:0] p7; // B2
-	reg	[31:0] p6; // RG
-	reg	[31:0] p5; // GB
-	reg	[31:0] p4; // BR
-	reg	[31:0] p3; // R
-	reg	[31:0] p2; // G
-	reg	[31:0] p1; // B
+	reg	[31:0] next_p18, // R3
+			   next_p17, // G3
+			   next_p16, // B3
+			   next_p15, // R2G
+			   next_p14, // RG2
+			   next_p13, // G2B
+			   next_p12, // GB2
+			   next_p11, // B2R
+			   next_p10, // BR2
+			   next_p9, // R2
+			   next_p8, // G2
+			   next_p7, // B2
+			   next_p6, // RG
+			   next_p5, // GB
+			   next_p4, // 32
+			   next_p3, // R
+			   next_p2, // G
+			   next_p1; // B
 
-	reg	[31:0] next_p18; // R3
-	reg [31:0] next_p17; // G3
-	reg	[31:0] next_p16; // B3
-	reg	[31:0] next_p15; // R2G
-	reg	[31:0] next_p14; // RG2
-	reg	[31:0] next_p13; // G2B
-	reg	[31:0] next_p12; // GB2
-	reg	[31:0] next_p11; // B2R
-	reg	[31:0] next_p10; // BR2
-	reg	[31:0] next_p9; // R2
-	reg	[31:0] next_p8; // G2
-	reg	[31:0] next_p7; // B2
-	reg	[31:0] next_p6; // RG
-	reg	[31:0] next_p5; // GB
-	reg	[31:0] next_p4; // 32
-	reg	[31:0] next_p3; // R
-	reg	[31:0] next_p2; // G
-	reg	[31:0] next_p1; // B
-
-	reg [31:0] vp_R;
-	reg [31:0] vp_G;
-	reg [31:0] vp_B;
-	reg [31:0] next_vp_R;
-	reg [31:0] next_vp_G;
-	reg [31:0] next_vp_B;
+	reg [31:0] vp_R,
+			   vp_G,
+			   vp_B;
+	reg [31:0] next_vp_R,
+			   next_vp_G,
+		       next_vp_B;
 
 //==== combinational part ===================================
 	// clock signal
-	assign wrclk_25 = clk_25;
+	//assign wrclk_25 = clk_25;
 
 	always@(*) begin     // STEP1 Prepare P
 		next_valid1 = valid;
@@ -219,7 +203,7 @@ module COLOR_TRANSFORM (
 		next_valid2 = valid1;
 
 		next_xbuff2 = xbuff1;
-		next_ybuff2 = ybuff2;
+		next_ybuff2 = ybuff1;
 
 		next_vp_R = VM_1_1*p18 + VM_1_2*p17 + VM_1_3*p16 + VM_1_4*p15 + VM_1_5*p14 + VM_1_6*p13 + VM_1_7*p12 + VM_1_8*p11 + VM_1_9*p10 + VM_1_10*p9 + VM_1_11*p8 + VM_1_12*p7 + VM_1_13*p6 + VM_1_14*p5 + VM_1_15*p4 + VM_1_16*p3 + VM_1_17*p2 + VM_1_18*p1;
 		next_vp_G = VM_2_1*p18 + VM_1_2*p17 + VM_2_3*p16 + VM_2_4*p15 + VM_2_5*p14 + VM_2_6*p13 + VM_2_7*p12 + VM_2_8*p11 + VM_2_9*p10 + VM_2_10*p9 + VM_2_11*p8 + VM_2_12*p7 + VM_2_13*p6 + VM_2_14*p5 + VM_2_15*p4 + VM_2_16*p3 + VM_2_17*p2 + VM_2_18*p1;
@@ -232,9 +216,9 @@ module COLOR_TRANSFORM (
 		next_x_o = xbuff2;
 		next_y_o = ybuff2;
 
-		next_red_o = (vp_R / DIV_CONST) + AMB_SHIFT;
-		next_green_o = (vp_G / DIV_CONST) + AMB_SHIFT;
-		next_blue_o = (vp_B / DIV_CONST) + AMB_SHIFT;
+		next_red_o = (vp_R / DIV_CONST) + r_shift_i;
+		next_green_o = (vp_G / DIV_CONST) + g_shift_i;
+		next_blue_o = (vp_B / DIV_CONST) + b_shift_i;
 
 	end
 
@@ -247,10 +231,10 @@ module COLOR_TRANSFORM (
 			red_o		<= 8'd0;
 			green_o		<= 8'd0;
 			blue_o		<= 8'd0;
-			wrreq 		<= 0;
+			wrreq 		<= 1'b0;
 
-			valid1 		<= 0;
-			valid2 		<= 0;
+			valid1 		<= 1'b0;
+			valid2 		<= 1'b0;
 
 			xbuff1 		<= 10'd0;
 			ybuff1 		<= 10'd0;
