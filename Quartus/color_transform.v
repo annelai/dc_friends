@@ -75,7 +75,7 @@ module COLOR_TRANSFORM (
 	parameter VM_3_8	= 32'd0;
 	parameter VM_3_9	= 32'd0;
 	parameter VM_3_10	= 32'd0;
-	parameter VM_3_11 	= 32'd0;
+	parameter VM_3_11 = 32'd0;
 	parameter VM_3_12	= 32'd0;
 	parameter VM_3_13	= 32'd0;
 	parameter VM_3_14	= 32'd0;
@@ -219,7 +219,7 @@ module COLOR_TRANSFORM (
 		next_valid2 = valid1;
 
 		next_xbuff2 = xbuff1;
-		next_ybuff2 = ybuff2;
+		next_ybuff2 = ybuff1;
 
 		next_vp_R = VM_1_1*p18 + VM_1_2*p17 + VM_1_3*p16 + VM_1_4*p15 + VM_1_5*p14 + VM_1_6*p13 + VM_1_7*p12 + VM_1_8*p11 + VM_1_9*p10 + VM_1_10*p9 + VM_1_11*p8 + VM_1_12*p7 + VM_1_13*p6 + VM_1_14*p5 + VM_1_15*p4 + VM_1_16*p3 + VM_1_17*p2 + VM_1_18*p1;
 		next_vp_G = VM_2_1*p18 + VM_1_2*p17 + VM_2_3*p16 + VM_2_4*p15 + VM_2_5*p14 + VM_2_6*p13 + VM_2_7*p12 + VM_2_8*p11 + VM_2_9*p10 + VM_2_10*p9 + VM_2_11*p8 + VM_2_12*p7 + VM_2_13*p6 + VM_2_14*p5 + VM_2_15*p4 + VM_2_16*p3 + VM_2_17*p2 + VM_2_18*p1;

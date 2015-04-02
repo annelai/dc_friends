@@ -76,7 +76,7 @@ reg		[31:0]	Frame_Cont;
 reg				mSTART;
 
 `ifdef VGA_640x480p60
-parameter COLUMN_WIDTH = 1280;
+parameter COLUMN_WIDTH = 640;
 `else
 parameter COLUMN_WIDTH = 800;
 `endif  

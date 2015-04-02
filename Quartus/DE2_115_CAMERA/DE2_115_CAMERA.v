@@ -558,7 +558,7 @@ RAW2RGB				u4	(	.iCLK(D5M_PIXLCLK),
 
 wire			color_fifoSync_valid;
 wire 	[7:0]	transform_r, transform_g, transform_b;
-
+wire	[9:0] transform_x, transform_y;
 
 wire 	[43:0]	fifo_sync_q;
 wire			fifo_sync_rdempty;
@@ -577,8 +577,14 @@ wire			homography_sync_start;
 
 wire			sync_sdram_valid;
 wire	[4:0]	sync_sdram_ccd_r,
-				sync_sdram_ccd_b;
-wire	[5:0]	sync_sdram_ccd_g;
+				sync_sdram_ccd_b,
+				sync_sdram_dvi_r,
+				sync_sdram_dvi_b,
+				sdram_r,
+				sdram_b;
+wire	[5:0]	sync_sdram_ccd_g,
+				sync_sdram_dvi_g,
+				sdram_g;
 
 wire			homography_sram_request;
 wire	[9:0]	homography_sram_X,
@@ -598,48 +604,56 @@ wire			SRAM_WE;
 
 wire			fifo_sync_full,
 				fifo_sram_full;
+wire	[9:0]	fifo_sram_usedw;
+
+wire			respondToHG;
+wire	[9:0]	SRAM_ctrl_CCD_X;
+
+wire	[9:0] sync_x;
 
 assign	SRAM_WE_N = ~SRAM_WE;
 
-color_transform color_transform1(
-							.clk_25(D5M_PIXLCLK),
-							.reset(DLY_RST_1),
-							.valid(sCCD_DVAL),
-							//// input-data ////
-							.x_i(X_Cont),
-							.y_i(Y_Cont),
-							.red_i(sCCD_R[11:4]),
-							.green_i(sCCD_G[11:4]),
-							.blue_i(sCCD_B[11:4]),
-							// output port	////
-							.wrreq(color_fifoSync_valid),
-							//.wrclk_25(),
-							//// output-data ////
-							//.x_o(),
-							//.y_o(),
-							.red_o(transform_r),
-							.green_o(transform_g),
-							.blue_o(transform_b)
+assign sdram_r = SW[17] ? sync_sdram_dvi_r : sync_sdram_ccd_r;
+assign sdram_g = SW[17] ? sync_sdram_dvi_g : sync_sdram_ccd_g;
+assign sdram_b = SW[17] ? sync_sdram_dvi_b : sync_sdram_ccd_b;
+
+COLOR_TRANSFORM color_transform1(
+	.clk_25(D5M_PIXLCLK),
+	.reset(DLY_RST_1),
+	.valid(sCCD_DVAL),
+	//// input-data ////
+	.x_i(X_Cont),
+	.y_i(Y_Cont),
+	.red_i(sCCD_R[11:4]),
+	.green_i(sCCD_G[11:4]),
+	.blue_i(sCCD_B[11:4]),
+	// output port	////
+	.wrreq(color_fifoSync_valid),
+	//.wrclk_25(),
+	//// output-data ////
+	.x_o(transform_x),
+	.y_o(transform_y),
+	.red_o(transform_r),
+	.green_o(transform_g),
+	.blue_o(transform_b)
 );
 
 
 sync_controller sync(
-	.clk_25(D5M_PIXLCLK),
+	.clk_25(~D5M_PIXLCLK),
 	.rst_n(DLY_RST_1),
 	.val(sync_sdram_valid),
-	//.sync_x(),
+	.sync_x(sync_x),
 	//.sync_y(),
-	//.dvi_r(sync_sdram_ccd_r),
-	//.dvi_g(sync_sdram_ccd_g),
-	//.dvi_b(sync_sdram_ccd_b),
+	.dvi_r(sync_sdram_dvi_r),
+	.dvi_g(sync_sdram_dvi_g),
+	.dvi_b(sync_sdram_dvi_b),
 	.ccd_r(sync_sdram_ccd_r),
 	.ccd_g(sync_sdram_ccd_g),
 	.ccd_b(sync_sdram_ccd_b),
-	// FIFO side
-	.q(fifo_sync_q),
-	.rdempty(fifo_sync_rdempty),
-	.rdclk(fifo_sync_rdclk),
-	.rdreq(fifo_sync_rdreq),
+	// ColorTransform side
+	.q({transform_x, transform_y, transform_r, transform_g, transform_b}),
+	.rdreq(color_fifoSync_valid),
 	// Homography side
 	.return_x(homography_sync_x), // 10 bit
 	.return_y(homography_sync_y), // 10 bit
@@ -655,16 +669,16 @@ sync_controller sync(
 
 FIFO_sync fifo_sync(
 	.aclr(~DLY_RST_1),
-	.data({X_Cont[9:0], Y_Cont[9:0], sCCD_R[11:4], sCCD_G[11:4], sCCD_B[11:4]}),
+	.data({transform_x, transform_y, transform_r, transform_g, transform_b}),
 	.rdclk(D5M_PIXLCLK),
 	.rdreq(fifo_sync_rdreq),
 	.wrclk(D5M_PIXLCLK),
 	.wrreq(sCCD_DVAL),
 	.q(fifo_sync_q),
 	.rdempty(fifo_sync_rdempty),
-	.rdusedw(LA_PIN[15:6]), // debug
+	//.rdusedw(fifo_sync_usedw), // debug
 	.wrfull(fifo_sync_full),  // debug
-	//.wrusedw()  // debug
+	.wrusedw(fifo_sync_usedw)  // debug
 );
 
 CLKSRC clksrc(
@@ -684,9 +698,13 @@ SRAM_Controller sram_controller(
 
 	// CCD FIFO side
 	.iFIFO_ReadEmpty(sram_fifo_rdempty),
+	.iFIFO_ReadUsedw(fifo_sram_usedw),
 	.iFIFO_Q(sram_fifo_q),
 	.oFIFO_ReadRequest(sram_fifo_rdreq),
 	.oFIFO_ReadCLK(sram_fifo_rdclk),
+
+	// enable signal
+	.iDVI_DVAL(rCCD_DVAL),
 
 	// SRAM side
 	.oSRAM_WE(SRAM_WE),
@@ -696,20 +714,22 @@ SRAM_Controller sram_controller(
 	// clock source 125MHz
 	.iCLK(sram_clk_125M),
 	.iHGCLK(D5M_PIXLCLK),
-	.iRST(DLY_RST_1)
+	.iRST(DLY_RST_1),
+	.oRespondToHG(respondToHG),
+	.oDEBUG(SRAM_ctrl_CCD_X)
 
 );
 
 FIFO_sram fifo_sram(
-	.aclr(~DLY_RST_1),
+	.aclr(~rCCD_FVAL),
 	.data({X_Cont[9:0], Y_Cont[9:0], sCCD_R[11:7], sCCD_G[11:6], sCCD_B[11:7]}),
 	.rdclk(sram_fifo_rdclk),
 	.rdreq(sram_fifo_rdreq),
-	.wrclk(D5M_PIXLCLK),
+	.wrclk(~D5M_PIXLCLK),
 	.wrreq(sCCD_DVAL),
 	.q(sram_fifo_q),
 	.rdempty(sram_fifo_rdempty),
-	.rdusedw(LA_PIN[25:16]), // debug
+	.rdusedw(fifo_sram_usedw), // debug
 	.wrfull(fifo_sram_full),  // debug
 	//.wrusedw()  // debug
 );
@@ -726,9 +746,9 @@ HOMOGRAPHY homography(
 	.oSRAM_X(homography_sram_X),
 	.oSRAM_Y(homography_sram_Y),
 	// CONTROLLER
-	.iX(homography_sync_query_x),
-	.iY(homography_sync_query_y),
-	.iSTART(homography_sync_start),
+	.iX(transform_x),
+	.iY(transform_y),
+	.iSTART(color_fifoSync_valid),
 	.oCON_X(homography_sync_x),
 	.oCON_Y(homography_sync_y),
 	.oR(homography_sync_r),
@@ -737,16 +757,27 @@ HOMOGRAPHY homography(
 	.oREADY(homography_sync_ready)
 );
 
+COUNTER counter(
+    .iCLK(D5M_PIXLCLK),
+    .iRST(DLY_RST_1),
+    .iSIGNAL(homography_sram_request)
+    //.oCOUNT(LA_PIN[12:3])
+);
 
 assign	LA_PIN[0] = D5M_PIXLCLK;
 assign	LA_PIN[1] = DLY_RST_1;
-assign	LA_PIN[2] = homography_sync_ready;
-assign	LA_PIN[3] = homography_sync_start;
-assign	LA_PIN[4] = homography_sram_Ready;
-assign	LA_PIN[5] = homography_sram_request;
-assign	LA_PIN[26] = sync_sdram_valid;
-assign	LA_PIN[27] = fifo_sync_full;
-assign	LA_PIN[28] = fifo_sram_full;
+assign	LA_PIN[2] = rCCD_FVAL;
+assign	LA_PIN[3] = rCCD_LVAL;
+assign	LA_PIN[13:4] = SRAM_ADDR;
+assign	LA_PIN[23:14] = SRAM_ctrl_CCD_X;
+//assign	LA_PIN[28:24] = sCCD_R[11:7];
+//assign	LA_PIN[33:29] = SRAM_DQ[15:11];
+assign	LA_PIN[33:24] = fifo_sram_usedw;
+assign	LA_PIN[34] = SRAM_WE;
+assign	LA_PIN[35] = sram_fifo_rdempty;
+
+assign	LEDR[16] = fifo_sram_full;
+
 
 ////////////////////////////////////////////
 ////////////////////////////////////////////
@@ -779,8 +810,10 @@ Sdram_Control	u7	(	//	HOST Side
 							.CLK(sdram_ctrl_clk),
 
 							//	FIFO Write Side 1
-							.WR1_DATA({1'b0, sync_sdram_ccd_g[5:1],{sync_sdram_ccd_b,5'b0}}),
+							.WR1_DATA({1'b0, sdram_g[5:1],{sdram_b,5'b0}}),
 							.WR1(sync_sdram_valid),
+							//.WR1_DATA({1'b0, sCCD_G[11:7],sCCD_B[11:2]}),
+							//.WR1(sCCD_DVAL),
 							.WR1_ADDR(0),
 `ifdef VGA_640x480p60
 						    .WR1_MAX_ADDR(640*480/2),
@@ -793,8 +826,10 @@ Sdram_Control	u7	(	//	HOST Side
 							.WR1_CLK(D5M_PIXLCLK),
 
 							//	FIFO Write Side 2
-							.WR2_DATA({1'b0,{sync_sdram_ccd_g[0],4'b0},{sync_sdram_ccd_r,5'b0}}),
+							.WR2_DATA({1'b0,{sdram_g[0],4'b0},{sdram_r,5'b0}}),
 							.WR2(sync_sdram_valid),
+							//.WR2_DATA({1'b0, sCCD_G[6:2],sCCD_R[11:2]}),
+							//.WR2(sCCD_DVAL),
 							.WR2_ADDR(23'h100000),
 `ifdef VGA_640x480p60
 						    .WR2_MAX_ADDR(23'h100000+640*480/2),
@@ -852,6 +887,8 @@ I2C_CCD_Config 		u8	(	//	Host Side
 							.iEXPOSURE_ADJ(KEY[1]),
 							.iEXPOSURE_DEC_p(SW[0]),
 							.iZOOM_MODE_SW(SW[16]),
+							.iTEST_PATTERN_SW(SW[1]),
+							.iTEST_PATTERN_MODE(SW[4:2]),
 							//	I2C Side
 							.I2C_SCLK(D5M_SCLK),
 							.I2C_SDAT(D5M_SDATA)

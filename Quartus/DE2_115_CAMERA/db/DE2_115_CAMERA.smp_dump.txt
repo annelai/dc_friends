@@ -4,20 +4,3 @@ Name mSetup_ST.0000 mSetup_ST.0010 mSetup_ST.0001
 mSetup_ST.0000 0 0 0 
 mSetup_ST.0001 1 0 1 
 mSetup_ST.0010 1 1 0 
-
-State Machine - |DE2_115_CAMERA|HOMOGRAPHY:homography|state
-Name state.S_OUT state.S_REQ state.S_HOM state.S_IDLE 
-state.S_IDLE 0 0 0 0 
-state.S_HOM 0 0 1 1 
-state.S_REQ 0 1 0 1 
-state.S_OUT 1 0 0 1 
-
-State Machine - |DE2_115_CAMERA|sync_controller:sync|state
-Name state.S_WAIT 
-state.S_IDLE 0 
-state.S_WAIT 1 
-
-State Machine - |DE2_115_CAMERA|color_transform:color_transform1|state
-Name state.S_SEND 
-state.S_WAIT 0 
-state.S_SEND 1 

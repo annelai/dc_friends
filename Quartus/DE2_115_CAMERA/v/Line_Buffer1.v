@@ -82,7 +82,7 @@ module Line_Buffer1 (
 		ALTSHIFT_TAPS_component.lpm_hint = "RAM_BLOCK_TYPE=M9K",
 		ALTSHIFT_TAPS_component.lpm_type = "altshift_taps",
 		ALTSHIFT_TAPS_component.number_of_taps = 2,
-		ALTSHIFT_TAPS_component.tap_distance = 1280,
+		ALTSHIFT_TAPS_component.tap_distance = 640,
 		ALTSHIFT_TAPS_component.width = 12;
 
 
@@ -98,14 +98,14 @@ endmodule
 // Retrieval info: PRIVATE: NUMBER_OF_TAPS NUMERIC "2"
 // Retrieval info: PRIVATE: RAM_BLOCK_TYPE NUMERIC "1"
 // Retrieval info: PRIVATE: SYNTH_WRAPPER_GEN_POSTFIX STRING "0"
-// Retrieval info: PRIVATE: TAP_DISTANCE NUMERIC "1280"
+// Retrieval info: PRIVATE: TAP_DISTANCE NUMERIC "640"
 // Retrieval info: PRIVATE: WIDTH NUMERIC "12"
 // Retrieval info: LIBRARY: altera_mf altera_mf.altera_mf_components.all
 // Retrieval info: CONSTANT: INTENDED_DEVICE_FAMILY STRING "Cyclone IV E"
 // Retrieval info: CONSTANT: LPM_HINT STRING "RAM_BLOCK_TYPE=M9K"
 // Retrieval info: CONSTANT: LPM_TYPE STRING "altshift_taps"
 // Retrieval info: CONSTANT: NUMBER_OF_TAPS NUMERIC "2"
-// Retrieval info: CONSTANT: TAP_DISTANCE NUMERIC "1280"
+// Retrieval info: CONSTANT: TAP_DISTANCE NUMERIC "640"
 // Retrieval info: CONSTANT: WIDTH NUMERIC "12"
 // Retrieval info: USED_PORT: clken 0 0 0 0 INPUT VCC "clken"
 // Retrieval info: USED_PORT: clock 0 0 0 0 INPUT NODEFVAL "clock"

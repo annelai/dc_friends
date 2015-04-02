@@ -98,7 +98,7 @@ begin
 	begin
 		mDATAd_0	<=	mDATA_0;
 		mDATAd_1	<=	mDATA_1;
-		mDVAL		<=	{iY_Cont[0]|iX_Cont[0]}	?	1'b0	:	iDVAL;
+		mDVAL		<=	iDVAL;//{iY_Cont[0]|iX_Cont[0]}	?	1'b0	:	iDVAL;
 		if({iY_Cont[0],iX_Cont[0]}==2'b10)
 		begin
 			mCCD_R	<=	mDATA_0;

@@ -28,20 +28,16 @@ module HOMOGRAPHY(
 parameter	H00		= 10'd1;
 parameter	H01		= 10'd0;
 parameter	H02		= 10'd0;
-
 parameter	H10		= 10'd0;
 parameter	H11		= 10'd1;
 parameter	H12		= 10'd0;
-
 parameter	H20		= 10'd0;
 parameter	H21		= 10'd0;
 parameter	H22		= 10'd1;
 parameter	H_DEN	= 10'd1;
 
-parameter 	S_IDLE	= 2'd0;
-parameter	S_HOM	= 2'd1;
-parameter	S_REQ	= 2'd2;
-parameter	S_OUT	= 2'd3;
+
+// IDEL(I) -> REQUEST(Q) -> RECEIVE(C) -> SEND(S)
 
 input iCLK, iRST_N, iREADY, iSTART;
 input	[9:0]	iX, iY;
@@ -53,78 +49,51 @@ output	[9:0]	oSRAM_X, oSRAM_Y, oCON_X, oCON_Y;
 output	[4:0]	oR, oB;
 output	[5:0]	oG;
 
-reg	[1:0]	state, next_state;
 reg oREQ, oREADY, next_oREQ, next_oREADY;
 reg	[9:0]	oSRAM_X, oSRAM_Y, oCON_X, oCON_Y, next_oSRAM_X, next_oSRAM_Y, next_oCON_X, next_oCON_Y, denum;
 reg	[4:0]	oR, oB, next_oR, next_oB;
 reg	[5:0]	oG, next_oG;
 
+reg	IQ_start, QC_start, CS_start;
+reg	[9:0] IQ_X, QC_X, CS_X, IQ_Y, QC_Y, CS_Y;
+
+
+
+
 always@(*) begin
-	next_state = state;
-	case( state )
-		S_IDLE: begin
-			if( iSTART ) begin
-				next_state = S_HOM;
-			end
-		end
-		S_HOM: begin
-			next_state = S_REQ;
-		end
-		S_REQ: begin
-			if( iREADY ) begin
-				next_state = S_OUT;
-			end
-		end
-		S_OUT: begin
-			next_state = S_IDLE;
-		end
-		default: begin
-			next_state = S_IDLE;
-		end
-	endcase
+	next_oREQ = 1'd0;
+	denum = 10'd1;
+	next_oCON_X = oCON_X;
+	next_oCON_Y = oCON_Y;
+	// beware of overflow
+	next_oSRAM_X = oSRAM_X;
+	next_oSRAM_Y = oSRAM_Y;
+	if( iSTART ) begin
+		next_oREQ = 1'd1;
+		denum = H20 * iX + H21 * iY + H22;
+		next_oCON_X = iX;
+		next_oCON_Y = iY;
+		// beware of overflow
+		next_oSRAM_X = ( H00 * iX + H01 * iY + H02 ) / denum;
+		next_oSRAM_Y = ( H10 * iX + H11 * iY + H12 ) / denum;
+	end
 end
 
 always@(*) begin
-	next_oREQ = oREQ;
-	next_oREADY = oREADY;
-	next_oSRAM_X = oSRAM_X;
-	next_oSRAM_Y = oSRAM_Y;
-	next_oCON_X = oCON_X;
-	next_oCON_Y = oCON_Y;
+	next_oREADY = 1'd0;
 	next_oR = oR;
-	next_oB = oB;
 	next_oG = oG;
-	denum = 0;
-	case( state )
-		S_IDLE: begin
-			next_oREQ = 1'd0;
-			next_oREADY = 1'd0;
-		end
-		S_HOM: begin
-			next_oREQ = 1'd1;
-			denum = H20 * iX + H21 * iY + H22;
-			next_oCON_X = iX;
-			next_oCON_Y = iY;
-			next_oSRAM_X = ( H00 * iX + H01 * iY + H02 ) / denum;
-			next_oSRAM_Y = ( H10 * iX + H11 * iY + H12 ) / denum;
-		end
-		S_REQ: begin
-			next_oREQ = 1'd0;
-		end
-		S_OUT: begin
-			next_oREADY = 1'd1;
-			next_oR = iR;
-			next_oG = iG;
-			next_oB = iB;
-		end
-		default: begin
-		end
-	endcase
+	next_oB = oB;
+	if( QC_start ) begin
+		next_oREADY = 1'd1;
+		next_oR = iR;
+		next_oG = iG;
+		next_oB = iB;
+	end
 end
 
     always @(posedge iCLK or negedge iRST_N) begin
 	    if( ~iRST_N ) begin
-		    state	<= S_IDLE;
 		    oREQ	<= 1'd0;
 		    oREADY	<= 1'd0;
 		    oSRAM_X	<= 10'd0;
@@ -134,9 +103,17 @@ end
 		    oR		<= 5'd0;
 		    oG		<= 6'd0;
 		    oB		<= 5'd0;
+		    IQ_start<= 1'd0;
+		    QC_start<= 1'd0;
+		    CS_start<= 1'd0;
+		    IQ_X	<= 10'd0;
+		    QC_X	<= 10'd0;
+		    CS_X	<= 10'd0;
+		    IQ_Y	<= 10'd0;
+		    QC_Y	<= 10'd0;
+		    CS_Y	<= 10'd0;
 	    end
 	    else begin
-		    state	<= next_state;
 		    oREQ	<= next_oREQ;
 		    oREADY	<= next_oREADY;
 		    oSRAM_X	<= next_oSRAM_X;
@@ -146,6 +123,18 @@ end
 		    oR		<= next_oR;
 		    oG		<= next_oG;
 		    oB		<= next_oB;
+		    IQ_start<= iSTART;
+		    QC_start<= IQ_start;
+			 //QC_start<= iSTART;
+		    CS_start<= QC_start;
+		    IQ_X	<= iX;
+		    QC_X	<= IQ_X;
+			 //QC_X	<= iX;
+		    CS_X	<= QC_X;
+		    IQ_Y	<= iY;
+		    QC_Y	<= IQ_Y;
+			 //QC_Y	<= iY;
+		    CS_Y	<= QC_Y;
 	    end
     end
 endmodule

@@ -25,8 +25,8 @@
 
 create_clock -name "CLK2_50" -period 20.000ns [get_ports {CLOCK_50}]
 create_clock -name "CLK_50" -period 20.000ns [get_ports {CLOCK2_50}]
-create_clock -name "D5MPIXCLK" -period 40.000ns [get_ports {D5M_PIXLCLK}]
-create_clock -name "D5MFVAL" -period 6666.600ns [get_ports {D5M_FVAL}]
+create_clock -name "D5MPIXCLK" -period 20.000ns [get_ports {D5M_PIXLCLK}]
+create_clock -name "D5MFVAL" -period 6660000.000ns [get_ports {D5M_FVAL}]
 
 
 # Automatically constrain PLL and other generated clocks

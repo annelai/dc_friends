@@ -23,9 +23,13 @@ module SRAM_Controller(
 
 	// CCD FIFO side
 	iFIFO_ReadEmpty,
+	iFIFO_ReadUsedw,
 	iFIFO_Q,
 	oFIFO_ReadRequest,
 	oFIFO_ReadCLK,
+
+	// enable signal
+	iDVI_DVAL,
 
 	// SRAM side
 	oSRAM_WE,
@@ -35,7 +39,11 @@ module SRAM_Controller(
 	// clock source 125MHz
 	iCLK,
 	iHGCLK,
-	iRST
+	iRST,
+
+	oRespondToHG,
+
+	oDEBUG
 
 	);
 
@@ -54,9 +62,13 @@ output			oReady;
 
 // CCD FIFO side
 input			iFIFO_ReadEmpty;
+input	[9:0]	iFIFO_ReadUsedw;
 input	[35:0]	iFIFO_Q;
 output			oFIFO_ReadRequest;
 output			oFIFO_ReadCLK;
+
+// enable signal
+input			iDVI_DVAL;
 
 // SRAM side
 output			oSRAM_WE;
@@ -67,6 +79,10 @@ inout	[15:0]	ioSRAM_DQ;
 input			iCLK;
 input			iHGCLK;
 input			iRST;
+
+// debug
+output			oRespondToHG;
+output	[9:0]	oDEBUG;
 
 
 // -----------------------------------------------------------
@@ -79,8 +95,10 @@ parameter	FRAME_HEIGHT = 480;
 // -----------------------------------------------------------
 // reg/wire declaration
 // -----------------------------------------------------------
-reg				writeToSRAM;
+reg				writeToSRAM,
+				nextWriteToSRAM;
 reg				prev_HGRequest;
+reg				HGRequest_buf;
 
 reg		[19:0]	CCD_Address;
 wire	[9:0]	CCD_X, CCD_Y;
@@ -122,6 +140,8 @@ assign	CCD_Red = iFIFO_Q[15:11];
 assign	CCD_Green = iFIFO_Q[10:5];
 assign	CCD_Blue = iFIFO_Q[4:0];
 
+assign	oDEBUG = CCD_X;
+
 always@(*)
 begin
 	CCD_Address = CCD_Y * FRAME_WIDTH + CCD_X;
@@ -151,56 +171,38 @@ end
 
 always@(*)
 begin
-	nextSRAM_ADDR = (writeToSRAM)? CCD_Address:Read_Address;
+	nextSRAM_ADDR = (nextWriteToSRAM)? CCD_Address:Read_Address;
 	nextSRAM_WE = writeToSRAM;
 end
 
-
 always@(*)
 begin
-	if ({prev_HGRequest, iHGRequest} == 2'b01)
-	begin
-		nextClockCounter = 3'd0;
+	if (iHGRequest)
 		nextReady = 1'b1;
-	end
-
-	else if (clockCounter == 3'd5)
-	begin
-		nextClockCounter = 3'd5;
-		nextReady = 1'b0;
-	end
-
 	else
-	begin
-		nextClockCounter = clockCounter + 3'd1;
-		nextReady = 1'b1;
-	end
+		nextReady = 1'b0;
 end
 
 always@(*)
 begin
-	if ({prev_HGRequest, iHGRequest} == 2'b01)
+	if (iHGRequest)
 	begin
 		// edge detector
-		writeToSRAM = 1'b0;
+		nextWriteToSRAM = 1'b0;
 		nextFIFO_ReadRequest = 1'b0;
-		//nextReady = 1'b1;
 	end
 	
-	else if (!iFIFO_ReadEmpty)
+	else if (iFIFO_ReadUsedw != 10'd0 && ~iDVI_DVAL)
 	begin
 		// FIFO is not empty
-		writeToSRAM = 1'b1;
+		nextWriteToSRAM = 1'b1;
 		nextFIFO_ReadRequest = 1'b1;
-		//nextReady = 1'b0;
 	end
 
 	else
 	begin
-		// FIFO is empty, should not be this case though
-		writeToSRAM = 1'b0;
+		nextWriteToSRAM = 1'b0;
 		nextFIFO_ReadRequest = 1'b0;
-		//nextReady = 1'b0;
 	end
 end
 
@@ -213,27 +215,31 @@ begin
 	if (!iRST)
 	begin
 		prev_HGRequest		<= 1'b0;
-		oSRAM_ADDR		<= 20'd0;
-		oSRAM_WE		<= 1'b0;
-		oReady			<= 1'b0;
-		oHGRed			<= 5'd0;
-		oHGGreen		<= 6'd0;
-		oHGBlue			<= 5'd0;
+		HGRequest_buf 		<= 1'b0;
+		oSRAM_ADDR			<= 20'd0;
+		oSRAM_WE			<= 1'b0;
+		oReady				<= 1'b0;
+		oHGRed				<= 5'd0;
+		oHGGreen			<= 6'd0;
+		oHGBlue				<= 5'd0;
 		oFIFO_ReadRequest	<= 1'b0;
-		clockCounter	<= 3'd0;
+		clockCounter		<= 3'd0;
+		writeToSRAM			<= 1'b0;
 	end
 
 	else
 	begin
-		prev_HGRequest	<= iHGRequest;
-		oSRAM_ADDR 		<= nextSRAM_ADDR;
-		oSRAM_WE		<= nextSRAM_WE;
-		oReady			<= nextReady;
-		oHGRed			<= nextToHGRed;
-		oHGGreen		<= nextToHGGreen;
-		oHGBlue			<= nextToHGBlue;
+		prev_HGRequest		<= HGRequest_buf;
+		HGRequest_buf 		<= iHGRequest;
+		oSRAM_ADDR 			<= nextSRAM_ADDR;
+		oSRAM_WE			<= nextSRAM_WE;
+		oReady				<= nextReady;
+		oHGRed				<= nextToHGRed;
+		oHGGreen			<= nextToHGGreen;
+		oHGBlue				<= nextToHGBlue;
 		oFIFO_ReadRequest	<= nextFIFO_ReadRequest;
-		clockCounter	<= nextClockCounter;
+		clockCounter		<= nextClockCounter;
+		writeToSRAM			<= nextWriteToSRAM;
 	end
 end
 

@@ -1049,6 +1049,7 @@ set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
 set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
 set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 set_global_assignment -name STRATIX_DEVICE_IO_STANDARD "3.3-V LVTTL"
+set_global_assignment -name VERILOG_FILE ../counter.v
 set_global_assignment -name SDC_FILE DE2_115_CAMERA.sdc
 set_global_assignment -name VERILOG_FILE ../sync_controller.v
 set_global_assignment -name VERILOG_FILE ../SRAM_Controller.v

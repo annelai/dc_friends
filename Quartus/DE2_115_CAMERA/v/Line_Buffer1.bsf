@@ -68,7 +68,7 @@ applicable agreement for further details.
 	(drawing
 		(text "altshift_taps" (rect 66 16 182 43)(font "Arial" ))
 		(text "Number of taps 2" (rect 18 91 108 193)(font "Arial" ))
-		(text "Tap distance 1280" (rect 18 101 109 213)(font "Arial" ))
+		(text "Tap distance 640" (rect 18 101 104 213)(font "Arial" ))
 		(line (pt 16 16)(pt 168 16))
 		(line (pt 168 16)(pt 168 112))
 		(line (pt 168 112)(pt 16 112))
