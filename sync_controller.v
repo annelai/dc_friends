@@ -209,7 +209,6 @@ module sync_controller (
 			ccd_r		<= 5'd0;
 			ccd_g		<= 6'd0;
 			ccd_b		<= 5'd0;
-			rdreq 		<= 1'b0;
 			start 		<= 1'b0;
 			query_x 	<= 10'd0;
 			query_y 	<= 10'd0;
@@ -232,7 +231,6 @@ module sync_controller (
 			ccd_r		<= next_ccd_r;
 			ccd_g		<= next_ccd_g;
 			ccd_b		<= next_ccd_b;
-			rdreq 		<= next_rdreq;
 			start 		<= next_start;		
 			query_x 	<= next_query_x;
 			query_y 	<= next_query_y;
