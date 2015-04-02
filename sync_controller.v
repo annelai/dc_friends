@@ -141,14 +141,14 @@ module sync_controller (
         end
         else begin
             next_start = 1'b0;
-            if(ready==1'b0)
+            if(ready==1'b0) begin
             	next_count = 1'b0;
             	next_max_count = 1'b0;
+            end
         end
 		
 		if(ready==1'b1) begin
             next_max_count = 1'b1;
-            next_count = count;
             next_val = 1'b1;
             next_ccd_r = r;
             next_ccd_g = g;
