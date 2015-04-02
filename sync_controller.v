@@ -104,7 +104,7 @@ module sync_controller (
     reg             max_count, next_max_count;
 // ==== combinational part =================================
 	assign rdclk = clk_25;
-    assign get_buff = max_count? next_count: (next_count-3'd1);
+    //assign get_buff = max_count? count: next_count;
     
     always@(*) begin
 		next_state = state;
@@ -136,6 +136,7 @@ module sync_controller (
 
         case(state)
 			S_IDLE: begin
+                next_count = 3'd0;
                 next_start = 1'b0;
 				if(~rdempty) begin
 					next_state = S_WAIT;
@@ -163,6 +164,7 @@ module sync_controller (
 
 				if(ready==1'b1) begin
                     next_max_count = 1'b1;
+                    next_count = count;
                     next_val = 1'b1;
                     next_ccd_r = r;
                     next_ccd_g = g;
@@ -172,7 +174,7 @@ module sync_controller (
                     next_buffer3 = buffer2;
                     next_buffer4 = buffer3;
                     next_buffer5 = buffer4;
-                    case(get_buff)
+                    case(count)
                 		3'd1: begin
                 		    next_sync_x = buffer1[35:26];
                 		    next_sync_y = buffer1[25:16];
