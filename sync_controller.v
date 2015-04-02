@@ -158,7 +158,7 @@ module sync_controller (
             next_buffer3 = buffer2;
             next_buffer4 = buffer3;
             next_buffer5 = buffer4;
-            case(count)
+            case(3'd1)
          		3'd1: begin
          		    next_sync_x = buffer1[35:26];
          		    next_sync_y = buffer1[25:16];
