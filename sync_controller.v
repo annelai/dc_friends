@@ -60,7 +60,7 @@ module sync_controller (
     reg             val, next_val;
 	reg				debug, next_debug;
 
-    reg     [35:0]  buffer, next_buffer; // 10,10,5,6,5
+    reg     [35:0]  buffer1, buffer2, buffer3, next_buffer1, next_buffer2, next_buffer3; // 10,10,5,6,5
 // ==== combinational part =================================
     
     always@(*) begin
@@ -75,11 +75,13 @@ module sync_controller (
 		next_sync_x = sync_x;
 		next_sync_y = sync_y;
 
-        next_buffer = buffer;
+        next_buffer1 = buffer1;
+        next_buffer2 = buffer1;
+        next_buffer3 = buffer2;
         next_debug = 1'b0 || debug;
 
         if(rdreq==1'b1) begin
-            next_buffer = {q[43:24], q[23:19], q[15:10], q[7:3]};
+            next_buffer1 = {q[43:24], q[23:19], q[15:10], q[7:3]};
         end
 		
 		if(ready==1'b1) begin
@@ -88,11 +90,11 @@ module sync_controller (
             next_ccd_g = g;
             next_ccd_b = b;
             
-         	next_sync_x = buffer[35:26];
-         	next_sync_y = buffer[25:16];
-         	next_dvi_r = buffer[15:11];
-         	next_dvi_g = buffer[10:5];
-         	next_dvi_b = buffer[4:0];
+         	next_sync_x = buffer3[35:26];
+         	next_sync_y = buffer3[25:16];
+         	next_dvi_r = buffer3[15:11];
+         	next_dvi_g = buffer3[10:5];
+         	next_dvi_b = buffer3[4:0];
 			
             if(next_sync_x!=return_x || next_sync_y!=return_y) next_debug = 1'b1;
 		end
@@ -112,7 +114,9 @@ module sync_controller (
 			sync_y 		<= 10'd0;
             debug       <= 1'b0;
             val         <= 1'b0;
-            buffer      <= 36'd0;
+            buffer1     <= 36'd0;
+            buffer2     <= 36'd0;
+            buffer3     <= 36'd0;
 		end
 		else begin
 			dvi_r		<= next_dvi_r;
@@ -125,7 +129,9 @@ module sync_controller (
 			sync_y 		<= next_sync_y;
             debug       <= next_debug;
             val         <= next_val;
-            buffer      <= next_buffer;
+            buffer1     <= next_buffer1;
+            buffer2     <= next_buffer2;
+            buffer3     <= next_buffer3;
 		end
 	end
 endmodule
