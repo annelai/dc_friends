@@ -64,7 +64,7 @@ module MASK_GENERATOR(
             if(ccd_g > dvi_g)
                 next_diff_g = (ccd_g - dvi_g)*(ccd_g - dvi_g);
             else
-                next_diff_g = ((dvi_g - ccd_g)*(dvi_g - ccd_g);
+                next_diff_g = (dvi_g - ccd_g)*(dvi_g - ccd_g);
             if(ccd_b > dvi_b)
                 next_diff_b = ({ccd_b, 1'b0} - {dvi_b, 1'b0})*({ccd_b, 1'b0} - {dvi_b, 1'b0});
             else
