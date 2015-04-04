@@ -46,8 +46,10 @@ module ALT (
 	reg [31:0] next_threshold_o;
 
 	//---- wire ----//
-	wire [5:0] delR, delG, delB;
-	wire [31:0] FDs2;
+	reg [5:0]	delR, next_delR, 
+				delG, next_delG,
+				delB, next_delB;
+	reg [31:0] FDs2, next_FDs2;
 	//---- flip-flops ----//
 	reg [9:0] syncX, syncY,
 			  next_syncX, next_syncY;
@@ -87,11 +89,16 @@ module ALT (
 	end
 
 	// absolute difference
-	assign delR = (DVI_R > CCD_R) ? (DVI_R - CCD_R) : (CCD_R - DVI_R);
-	assign delG = (DVI_G > CCD_G) ? (DVI_G - CCD_G) : (CCD_G - DVI_G);
-	assign delB = (DVI_B > CCD_B) ? (DVI_B - CCD_B) : (CCD_B - DVI_B);	
+	always@(*) begin
+		next_delR = (DVI_R > CCD_R) ? (DVI_R - CCD_R) : (CCD_R - DVI_R);
+		next_delG = (DVI_G > CCD_G) ? (DVI_G - CCD_G) : (CCD_G - DVI_G);
+		next_delB = (DVI_B > CCD_B) ? (DVI_B - CCD_B) : (CCD_B - DVI_B);	
+	end
+	
 	// FD^2 = (dR^2 + dG^2 + dB^2)
-	assign FDs2 = delR*delR + delG*delG + delB*delB;
+	always@(*) begin
+		next_FDs2 = delR*delR + delG*delG + delB*delB;
+	end
 
 	// frame done 640*480 output
 	always@(*) begin 			// Ambient Light Shift (mean)	
@@ -169,6 +176,11 @@ module ALT (
 			CCD_G 				<= 6'd0;
 			CCD_B 				<= 6'd0;
 
+			delR 				<= 6'd0;
+			delG 				<= 6'd0;
+			delB 				<= 6'd0;
+			FDs2 				<= 32'd0;
+
 			tAMB_R 				<= 32'd0;
 			tAMB_G 				<= 32'd0;
 			tAMB_B 				<= 32'd0;
@@ -193,6 +205,11 @@ module ALT (
 			CCD_R 				<= next_CCD_R;
 			CCD_G 				<= next_CCD_G;
 			CCD_B 				<= next_CCD_B;
+
+			delR 				<= next_delR;
+			delG 				<= next_delG;
+			delB 				<= next_delB;
+			FDs2 				<= next_FDs2;
 
 			tAMB_R 				<= next_tAMB_R;
 			tAMB_G 				<= next_tAMB_G;
