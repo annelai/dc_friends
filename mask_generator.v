@@ -35,14 +35,14 @@ module MASK_GENERATOR(
     output          mask;
     output  [9:0]   mask_x, mask_y;
 // ==== reg/wire declaration ===============================
-    wire    [31:0]  diff;
+    wire    [31:0]  diff_r, diff_g, diff_b;
     reg             valid, next_valid;
     reg             mask, next_mask;
     reg     [9:0]   mask_x, mask_y, next_mask_x, next_mask_y;
 // ==== combinational part =================================
-    assign diff = (ccd_r > dvi_r)? (({ccd_r, 1'b0} - {dvi_r, 1'b0})*({ccd_r, 1'b0} - {dvi_r, 1'b0})) : (({dvi_r, 1'b0} - {ccd_r, 1'b0})*({dvi_r, 1'b0} - {ccd_r, 1'b0})) 
-                + (ccd_g > dvi_g)? ((ccd_g - dvi_g)*(ccd_g - dvi_g)) : ((dvi_g - ccd_g)*(dvi_g - ccd_g))
-                + (ccd_b > dvi_b)? (({ccd_b, 1'b0} - {dvi_b, 1'b0})*({ccd_b, 1'b0} - {dvi_b, 1'b0})) : (({dvi_b, 1'b0} - {ccd_b, 1'b0})*({dvi_b, 1'b0}     - {ccd_b, 1'b0}));
+    assign diff_r = (ccd_r > dvi_r)? (({ccd_r, 1'b0} - {dvi_r, 1'b0})*({ccd_r, 1'b0} - {dvi_r, 1'b0})) : (({dvi_r, 1'b0} - {ccd_r, 1'b0})*({dvi_r, 1'b0} - {ccd_r, 1'b0})); 
+    assign diff_g = (ccd_g > dvi_g)? ((ccd_g - dvi_g)*(ccd_g - dvi_g)) : ((dvi_g - ccd_g)*(dvi_g - ccd_g));
+    assign diff_b = (ccd_b > dvi_b)? (({ccd_b, 1'b0} - {dvi_b, 1'b0})*({ccd_b, 1'b0} - {dvi_b, 1'b0})) : (({dvi_b, 1'b0} - {ccd_b, 1'b0})*({dvi_b, 1'b0}     - {ccd_b, 1'b0}));
     
     always@(*) begin
         next_mask = mask;
@@ -53,7 +53,7 @@ module MASK_GENERATOR(
             next_valid = 1'b1;
             next_mask_x = sync_x;
             next_mask_y = sync_y;
-            if(diff > threshold) begin
+            if((diff_r + diff_g + diff_b) > threshold) begin
                 next_mask = 1'b0;
             end
             else begin
