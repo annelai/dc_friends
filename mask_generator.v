@@ -42,9 +42,6 @@ module MASK_GENERATOR(
     reg     [9:0]   mask_x, mask_y, next_mask_x, next_mask_y;
     reg     [19:0]  buffer, next_buffer;
 // ==== combinational part =================================
-    //assign diff_r = (ccd_r > dvi_r)? (({ccd_r, 1'b0} - {dvi_r, 1'b0})*({ccd_r, 1'b0} - {dvi_r, 1'b0})) : (({dvi_r, 1'b0} - {ccd_r, 1'b0})*({dvi_r, 1'b0} - {ccd_r, 1'b0})); 
-    //assign diff_g = (ccd_g > dvi_g)? ((ccd_g - dvi_g)*(ccd_g - dvi_g)) : ((dvi_g - ccd_g)*(dvi_g - ccd_g));
-    //assign diff_b = (ccd_b > dvi_b)? (({ccd_b, 1'b0} - {dvi_b, 1'b0})*({ccd_b, 1'b0} - {dvi_b, 1'b0})) : (({dvi_b, 1'b0} - {ccd_b, 1'b0})*({dvi_b, 1'b0}     - {ccd_b, 1'b0}));
     
     always@(*) begin
         next_mask = mask;
@@ -53,6 +50,9 @@ module MASK_GENERATOR(
         next_done = 1'b0;
         next_buffer = buffer;
         next_valid = 1'b0;
+        next_diff_r = diff_r;
+        next_diff_g = diff_g;
+        next_diff_b = diff_b;
         
         if(read) begin
             next_done = 1'b1;
