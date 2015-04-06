@@ -18,7 +18,8 @@ module ALT (
 	AMB_SHIFT_R_o,
 	AMB_SHIFT_G_o,
 	AMB_SHIFT_B_o,
-	threshold_o
+	mean_o,
+	covar_o
 );
 
 //==== parameter definition =================================
@@ -38,14 +39,15 @@ module ALT (
 	input [5:0] CCD_G_i;
 	//---- output ----//
 	output [7:0] AMB_SHIFT_R_o, AMB_SHIFT_G_o, AMB_SHIFT_B_o;
-	output [31:0] threshold_o;
+	output [31:0] mean_o;
+	output [63:0] covar_o;
 
 //==== reg/wire declaration =================================
 	//---- output ----//
 	reg [7:0] AMB_SHIFT_R_o, AMB_SHIFT_G_o, AMB_SHIFT_B_o;
 	reg [7:0] next_AMB_SHIFT_R_o, next_AMB_SHIFT_G_o, next_AMB_SHIFT_B_o;
-	reg [31:0] threshold_o;
-	reg [31:0] next_threshold_o;
+	reg [31:0] mean_o, next_mean_o;
+	reg [63:0] covar_o, next_covar_o;
 
 	//---- wire ----//
 	reg [5:0]	delR, next_delR, 
@@ -70,7 +72,7 @@ module ALT (
 	reg [63:0] mFDs2, next_mFDs2;	//full FDs2
 	reg [31:0] MFDs2, next_MFDs2;	//mean FDs2 : MFD^2 = mFD^2/FRAME
 	reg [63:0] tDev, next_tDev;
-	reg [63:0] Devs2, next_Devs2;
+	reg [63:0] devs2, next_devs2;
 
 //==== combinational part ===================================
 	always@(*) begin
@@ -156,7 +158,7 @@ module ALT (
 	end
 
 	always@(*) begin 			// Deviation^2
-		next_Devs2 = Devs2;
+		next_devs2 = devs2;
 		next_tDev = tDev;
 		if((syncX != 10'd639)&&(syncY != 10'd479)) begin
 			// add (FD^2)^2
@@ -164,13 +166,16 @@ module ALT (
 		end
 		else begin
 			// Dev^2 = sig(.^2)/N - M.^2  [ .= FD^2 ]
-			next_Devs2 = (tDev + FDs2*FDs2) / FRAME_PIX - mFDs2*mFDs2;
+			next_devs2 = (tDev + FDs2*FDs2) / FRAME_PIX - mFDs2*mFDs2;
 			next_tDev = 64'd0;
 		end
 	end
 
-	always@(*) begin 			// caculate threshold
-		next_threshold_o = mFDs2;// + 2*sqr(Devs2);
+	always@(*) begin 			// caculate threshold = mean + 2*sqrt(Devs2)
+		next_mean_o = MFDs2;// + 2*sqr(Devs2);
+	end
+	always@(*) begin
+		next_covar_o = devs2;
 	end
 
 //==== sequential part ======================================
@@ -179,7 +184,8 @@ module ALT (
 			AMB_SHIFT_R_o 		<= 8'd0;
 			AMB_SHIFT_G_o 		<= 8'd0;
 			AMB_SHIFT_B_o 		<= 8'd0;
-			threshold_o 		<= 32'd0;
+			mean_o 				<= 32'd0;
+			covar_o 			<= 64'd0;
 
 			syncX 				<= 10'd0;
 			syncY 				<= 10'd0;
@@ -207,13 +213,14 @@ module ALT (
 			mFDs2 				<= 64'd0;
 
 			tDev 				<= 64'd0;
-			Devs2 				<= 64'd0;
+			devs2 				<= 64'd0;
 		end
 		else begin
 			AMB_SHIFT_R_o 		<= next_AMB_SHIFT_R_o;
 			AMB_SHIFT_G_o 		<= next_AMB_SHIFT_G_o;
 			AMB_SHIFT_B_o 		<= next_AMB_SHIFT_B_o;
-			threshold_o 		<= next_threshold_o;
+			mean_o 				<= next_mean_o;
+			covar_o 			<= next_covar_o;
 
 			syncX 				<= next_syncX; 				
 			syncY 				<= next_syncY;
@@ -241,7 +248,7 @@ module ALT (
 			mFDs2 				<= next_mFDs2;
 
 			tDev 				<= next_tDev;
-			Devs2 				<= next_Devs2;
+			devs2 				<= next_devs2;
 		end
 	end
 	always@( posedge clk_frame or negedge reset ) begin
