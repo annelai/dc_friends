@@ -196,7 +196,7 @@ module ALT (
 			amb_SHIFT_G 		<= 8'd0;
 			amb_SHIFT_B 		<= 8'd0;
 			mean_o 				<= 32'd0;
-			covar_o 			<= 64'd0;
+			covar_o 			<= 64'd1;
 
 			syncX 				<= 10'd0;
 			syncY 				<= 10'd0;
