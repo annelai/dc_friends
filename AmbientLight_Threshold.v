@@ -53,6 +53,9 @@ module ALT (
 	reg [5:0]	delR, next_delR, 
 				delG, next_delG,
 				delB, next_delB;
+	reg [7:0] 	amb_SHIFT_R, amb_SHIFT_G, amb_SHIFT_B,
+			 	next_amb_SHIFT_R, next_amb_SHIFT_G, next_amb_SHIFT_B;
+
 	reg [31:0]	FDs2_R, next_FDs2_R,
 				FDs2_G, next_FDs2_G,
 				FDs2_B, next_FDs2_B;
@@ -115,9 +118,9 @@ module ALT (
 
 	// frame done 640*480 output
 	always@(*) begin 			// Ambient Light Shift (mean)	
-		next_AMB_SHIFT_R_o = AMB_SHIFT_R_o;
-		next_AMB_SHIFT_G_o = AMB_SHIFT_G_o;
-		next_AMB_SHIFT_B_o = AMB_SHIFT_B_o;
+		next_amb_SHIFT_R = amb_SHIFT_R;
+		next_amb_SHIFT_G = amb_SHIFT_G;
+		next_amb_SHIFT_B = amb_SHIFT_B;
 
 		next_tAMB_R = tAMB_R;
 		next_tAMB_G = tAMB_G;
@@ -131,13 +134,18 @@ module ALT (
 		end
 		else begin 	
 			// averge AMB
-			next_AMB_SHIFT_R_o = {(tAMB_R + delR), 2'b0} / FRAME_PIX; // 6 -> 8 bit
-			next_AMB_SHIFT_G_o = {(tAMB_G + delG), 2'b0} / FRAME_PIX; // 6 -> 8 bit						// -> 8 bit
-			next_AMB_SHIFT_B_o = {(tAMB_B + delB), 2'b0} / FRAME_PIX; // 6 -> 8 bit
+			next_amb_SHIFT_R = {(tAMB_R + delR), 2'b0}; // 6 -> 8 bit
+			next_amb_SHIFT_G = {(tAMB_G + delG), 2'b0}; // 6 -> 8 bit
+			next_amb_SHIFT_B = {(tAMB_B + delB), 2'b0}; // 6 -> 8 bit
 			next_tAMB_R = 32'd0;
 			next_tAMB_G = 32'd0;
 			next_tAMB_B = 32'd0;
 		end
+	end
+	always@(*) begin
+		next_AMB_SHIFT_R_o 	= amb_SHIFT_R / FRAME_PIX;
+		next_AMB_SHIFT_G_o 	= amb_SHIFT_G / FRAME_PIX;
+		next_AMB_SHIFT_B_o 	= amb_SHIFT_B / FRAME_PIX;
 	end
 
 	always@(*) begin 			// mFD^2 (mean)
@@ -184,9 +192,9 @@ module ALT (
 //==== sequential part ======================================
 	always@( posedge clk_pixl or negedge reset ) begin
 		if(reset == 0 ) begin
-			AMB_SHIFT_R_o 		<= 8'd0;
-			AMB_SHIFT_G_o 		<= 8'd0;
-			AMB_SHIFT_B_o 		<= 8'd0;
+			amb_SHIFT_R 		<= 8'd0;
+			amb_SHIFT_G 		<= 8'd0;
+			amb_SHIFT_B 		<= 8'd0;
 			mean_o 				<= 32'd0;
 			covar_o 			<= 64'd0;
 
@@ -220,9 +228,9 @@ module ALT (
 
 		end
 		else begin
-			AMB_SHIFT_R_o 		<= next_AMB_SHIFT_R_o;
-			AMB_SHIFT_G_o 		<= next_AMB_SHIFT_G_o;
-			AMB_SHIFT_B_o 		<= next_AMB_SHIFT_B_o;
+			amb_SHIFT_R 		<= next_amb_SHIFT_R;
+			amb_SHIFT_G 		<= next_amb_SHIFT_G;
+			amb_SHIFT_B 		<= next_amb_SHIFT_B;
 			mean_o 				<= next_mean_o;
 			covar_o 			<= next_covar_o;
 
@@ -259,10 +267,16 @@ module ALT (
 		if(reset == 0 ) begin
 			MFDs2 				<= 32'd0;
 			Devs2 				<= 64'd0;
+			AMB_SHIFT_R_o 		<= 8'd0;
+			AMB_SHIFT_G_o 		<= 8'd0;
+			AMB_SHIFT_B_o 		<= 8'd0;
 		end
 		else begin
 			MFDs2 				<= next_MFDs2;
 			Devs2 				<= next_Devs2;
+			AMB_SHIFT_R_o 		<= next_AMB_SHIFT_R_o;
+			AMB_SHIFT_G_o 		<= next_AMB_SHIFT_G_o;
+			AMB_SHIFT_B_o 		<= next_AMB_SHIFT_B_o;
 		end
 	end
 endmodule
