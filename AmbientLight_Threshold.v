@@ -71,9 +71,9 @@ module ALT (
 	reg [31:0] tFDs2, next_tFDs2;	//gradually accumulate FDs2
 	reg [63:0] mFDs2, next_mFDs2;	//full FDs2
 	reg [31:0] MFDs2, next_MFDs2;	//mean FDs2 : MFD^2 = mFD^2/FRAME
-	reg [63:0] tDev, next_tDev;
-	reg [63:0] devs2, next_devs2;
-
+	reg [63:0] tDev, next_tDev;		//gradually accumulate Devs2
+	reg [63:0] devs2, next_devs2;	//full Devs2
+	reg [63:0] Devs2, next_Devs2;	//covariance = dev^2/FRAME - MFD^2*MFD^2
 //==== combinational part ===================================
 	always@(*) begin
 		next_syncX = syncX; 
@@ -166,16 +166,19 @@ module ALT (
 		end
 		else begin
 			// Dev^2 = sig(.^2)/N - M.^2  [ .= FD^2 ]
-			next_devs2 = (tDev + FDs2*FDs2) / FRAME_PIX - mFDs2*mFDs2;
+			next_devs2 = (tDev + FDs2*FDs2);
 			next_tDev = 64'd0;
 		end
+	end
+	always@(*) begin
+		next_Devs2 = devs2 / FRAME_PIX;
 	end
 
 	always@(*) begin 			// caculate threshold = mean + 2*sqrt(Devs2)
 		next_mean_o = MFDs2;// + 2*sqr(Devs2);
 	end
 	always@(*) begin
-		next_covar_o = devs2;
+		next_covar_o = Devs2 - MFDs2*MFDs2;
 	end
 
 //==== sequential part ======================================
@@ -214,6 +217,7 @@ module ALT (
 
 			tDev 				<= 64'd0;
 			devs2 				<= 64'd0;
+
 		end
 		else begin
 			AMB_SHIFT_R_o 		<= next_AMB_SHIFT_R_o;
@@ -254,9 +258,11 @@ module ALT (
 	always@( posedge clk_frame or negedge reset ) begin
 		if(reset == 0 ) begin
 			MFDs2 				<= 32'd0;
+			Devs2 				<= 64'd0;
 		end
 		else begin
 			MFDs2 				<= next_MFDs2;
+			Devs2 				<= next_Devs2;
 		end
 	end
 endmodule
