@@ -2,8 +2,8 @@ module COLOR_TRANSFORM (
 	// input port ////
 	clk_25,
 	reset,
-	valid,
 	//// input-data ////
+	valid,
 	x_i,
 	y_i,
 	red_i,
