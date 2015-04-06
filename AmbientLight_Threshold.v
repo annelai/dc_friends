@@ -1,6 +1,7 @@
 module ALT (
 	// input port //
-	clk_25,
+	clk_pixl,
+	clk_frame,
 	reset,
 	//// input data ////
 	valid_i,
@@ -25,7 +26,8 @@ module ALT (
 
 //==== in/out declaration ===================================
 	//---- input ----//
-	input clk_25;
+	input clk_pixl;
+	input clk_frame;
 	input reset;
 
 	input valid_i;
@@ -49,6 +51,9 @@ module ALT (
 	reg [5:0]	delR, next_delR, 
 				delG, next_delG,
 				delB, next_delB;
+	reg [31:0]	FDs2_R, next_FDs2_R,
+				FDs2_G, next_FDs2_G,
+				FDs2_B, next_FDs2_B;
 	reg [31:0] FDs2, next_FDs2;
 	//---- flip-flops ----//
 	reg [9:0] syncX, syncY,
@@ -61,8 +66,9 @@ module ALT (
 
 	reg [31:0] tAMB_R, tAMB_G, tAMB_B;
 	reg [31:0] next_tAMB_R, next_tAMB_G, next_tAMB_B; 
-	reg [31:0] tFDs2, next_tFDs2;
-	reg [31:0] mFDs2, next_mFDs2;
+	reg [31:0] tFDs2, next_tFDs2;	//gradually accumulate FDs2
+	reg [63:0] mFDs2, next_mFDs2;	//full FDs2
+	reg [31:0] MFDs2, next_MFDs2;	//mean FDs2 : MFD^2 = mFD^2/FRAME
 	reg [63:0] tDev, next_tDev;
 	reg [63:0] Devs2, next_Devs2;
 
@@ -97,7 +103,12 @@ module ALT (
 	
 	// FD^2 = (dR^2 + dG^2 + dB^2)
 	always@(*) begin
-		next_FDs2 = delR*delR + delG*delG + delB*delB;
+		next_FDs2_R = delR*delR;
+		next_FDs2_G = delG*delG;
+		next_FDs2_B = delB*delB;
+	end
+	always@(*) begin
+		next_FDs2 = FDs2_R + FDs2_G + FDs2_B;
 	end
 
 	// frame done 640*480 output
@@ -135,10 +146,13 @@ module ALT (
 			next_tFDs2 = tFDs2 + FDs2;
 		end
 		else begin
-			// averge FD^2 
-			next_mFDs2 = (tFDs2 + FDs2) / FRAME_PIX;
+			// full FD^2 (640*480) 
+			next_mFDs2 = (tFDs2 + FDs2);
 			next_tFDs2 = 32'd0;
 		end
+	end
+	always@(*) begin
+		next_MFDs2 = mFDs2 / FRAME_PIX;
 	end
 
 	always@(*) begin 			// Deviation^2
@@ -160,7 +174,7 @@ module ALT (
 	end
 
 //==== sequential part ======================================
-	always@( posedge clk_25 or negedge reset ) begin
+	always@( posedge clk_pixl or negedge reset ) begin
 		if(reset == 0 ) begin
 			AMB_SHIFT_R_o 		<= 8'd0;
 			AMB_SHIFT_G_o 		<= 8'd0;
@@ -179,6 +193,10 @@ module ALT (
 			delR 				<= 6'd0;
 			delG 				<= 6'd0;
 			delB 				<= 6'd0;
+
+			FDs2_R 				<= 32'd0;
+			FDs2_G 				<= 32'd0;
+			FDs2_B 				<= 32'd0; 
 			FDs2 				<= 32'd0;
 
 			tAMB_R 				<= 32'd0;
@@ -186,7 +204,7 @@ module ALT (
 			tAMB_B 				<= 32'd0;
 
 			tFDs2 				<= 32'd0;
-			mFDs2 				<= 32'd0;
+			mFDs2 				<= 64'd0;
 
 			tDev 				<= 64'd0;
 			Devs2 				<= 64'd0;
@@ -209,6 +227,10 @@ module ALT (
 			delR 				<= next_delR;
 			delG 				<= next_delG;
 			delB 				<= next_delB;
+
+			FDs2_R 				<= next_FDs2_R;
+			FDs2_G 				<= next_FDs2_G;
+			FDs2_B 				<= next_FDs2_B;
 			FDs2 				<= next_FDs2;
 
 			tAMB_R 				<= next_tAMB_R;
@@ -222,5 +244,12 @@ module ALT (
 			Devs2 				<= next_Devs2;
 		end
 	end
-
+	always@( posedge clk_frame or negedge reset ) begin
+		if(reset == 0 ) begin
+			MFDs2 				<= 32'd0;
+		end
+		else begin
+			MFDs2 				<= next_MFDs2;
+		end
+	end
 endmodule
