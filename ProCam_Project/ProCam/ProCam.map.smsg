@@ -1,0 +1,6 @@
+Warning (10273): Verilog HDL warning at SRAM_Controller.v(134): extended using "x" or "z"
+Info (10281): Verilog HDL Declaration information at AmbientLight_Threshold.v(75): object "mFDs2" differs only in case from object "MFDs2" in the same scope
+Info (10281): Verilog HDL Declaration information at AmbientLight_Threshold.v(75): object "next_mFDs2" differs only in case from object "next_MFDs2" in the same scope
+Info (10281): Verilog HDL Declaration information at AmbientLight_Threshold.v(78): object "devs2" differs only in case from object "Devs2" in the same scope
+Info (10281): Verilog HDL Declaration information at AmbientLight_Threshold.v(78): object "next_devs2" differs only in case from object "next_Devs2" in the same scope
+Warning (10273): Verilog HDL warning at Sdram_Control.v(320): extended using "x" or "z"

@@ -1,0 +1,14 @@
+Analysis & Synthesis Status : Successful - Mon Apr 06 23:43:57 2015
+Quartus II 64-Bit Version : 13.1.0 Build 162 10/23/2013 SJ Full Version
+Revision Name : ProCam
+Top-level Entity Name : ProCam
+Family : Cyclone IV E
+Total logic elements : 8,466
+    Total combinational functions : 7,087
+    Dedicated logic registers : 3,496
+Total registers : 3496
+Total pins : 305
+Total virtual pins : 0
+Total memory bits : 81,270
+Embedded Multiplier 9-bit elements : 19
+Total PLLs : 2

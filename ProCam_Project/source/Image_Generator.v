@@ -1,0 +1,74 @@
+module imageGenerator(
+	iClk,
+	iRST,
+	iRequestX,
+	iRequestY,
+
+	oR,
+	oG,
+	oB
+	);
+
+// -------------------------------------
+// input/output declaration
+// -------------------------------------
+
+input	iClk,
+		iRST;
+
+input	[11:0]	iRequestX,
+				iRequestY;
+
+output	[7:0]	oR,
+				oG,
+				oB;
+
+
+// -------------------------------------
+// reg/wire declaration
+// -------------------------------------
+reg		[7:0]	Red, nextRed,
+				Green, nextGreeen,
+				Blue, nextBlue;
+
+// -------------------------------------
+// Output assign
+// -------------------------------------
+assign	oR = Red;
+assign	oG = Green;
+assign	oB = Blue;
+
+// -------------------------------------
+// Combinational logic
+// -------------------------------------
+always@(*)
+begin
+	if(iRequestX<320) begin
+		nextRed = (iRequestX%8) ? 8'd255:8'd0;
+		nextGreeen = (iRequestX%8) ? 8'd255:8'd0;
+		nextBlue = (iRequestX%8) ? 8'd255:8'd0;
+	end
+	else begin
+		nextRed = (iRequestY%16) ? 8'd0:8'd255;
+		nextGreeen = (iRequestY%16) ? 8'd0:8'd255;
+		nextBlue = (iRequestY%16) ? 8'd0:8'd255;
+	end
+end
+// -------------------------------------
+// Sequential logic
+// -------------------------------------
+always@(posedge iClk or negedge iRST)
+begin
+	if(!iRST) begin
+		Red 	<= 8'd0;
+		Green 	<= 8'd0;
+		Blue 	<= 8'd0;
+	end
+	else begin
+		Red 	<= nextRed;
+		Green 	<= nextGreeen;
+		Blue 	<= nextBlue;
+	end
+end
+
+endmodule
